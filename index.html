@@ -1,33 +1,1855 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Math Mock Test Live</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Mock Test Hub</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+        // MathJax configuration (optional, but good for explicit delimiters)
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']], // For inline math
+                displayMath: [['$$', '$$'], ['\\[', '\\]']] // For display math
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- jsPDF library for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-      }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F7FA; /* Very light gray for overall background */
+            display: flex;
+            flex-direction: column; /* Allow header and container to stack */
+            justify-content: flex-start; /* Align content to the top */
+            align-items: center;
+            min-height: 100vh;
+            padding: 0; /* Remove body padding to allow header to stretch */
+            box-sizing: border-box;
+        }
+        .header-section {
+            background-color: #1A2C42; /* Deep Navy Blue */
+            color: white;
+            padding: 40px 20px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+            margin-bottom: 24px; /* Space between header and main container */
+        }
+        .container {
+            background-color: #FFFFFF; /* Pure white */
+            border-radius: 16px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            padding: 32px;
+            width: 100%;
+            max-width: 900px; /* Max width for readability */
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            margin-bottom: 20px; /* Space at the bottom */
+        }
+        .exam-card, .subject-card {
+            background-color: #E0F2F7; /* Light Cyan-ish blue */
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+        .exam-card:hover, .subject-card:hover {
+            background-color: #B2EBF2; /* Slightly darker Cyan-ish blue on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+        }
+        .question-card, .registration-card {
+            background-color: #FFFFFF; /* Pure white for card */
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid #D3D3D3; /* Light gray border */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .option-label:hover {
+            background-color: #E3F2FD; /* Light Blue 50 on hover */
+            border-color: #2196F3; /* Primary blue border on hover */
+        }
+        input[type="radio"]:checked + .option-label {
+            background-color: #BBDEFB; /* Light Blue 100 when checked */
+            border-color: #2196F3; /* Primary blue border when checked */
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2); /* Primary blue ring effect */
+        }
+        input[type="radio"] {
+            margin-right: 12px;
+            transform: scale(1.2); /* Slightly larger radio buttons */
+        }
+        /* Feedback styles */
+        .correct-answer-feedback {
+            background-color: #D4EDDA !important; /* Light green */
+            border-color: #28A745 !important; /* Darker green */
+            color: #155724 !important; /* Dark green text */
+        }
+        .incorrect-answer-feedback {
+            background-color: #F8D7DA !important; /* Light red */
+            border-color: #DC3545 !important; /* Darker red */
+            color: #721C24 !important; /* Dark red text */
+        }
+
+        .button-primary {
+            background-color: #2196F3; /* Material Design Blue 500 */
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
+        }
+        .button-primary:hover {
+            background-color: #1976D2; /* Material Design Blue 700 */
+            transform: translateY(-1px);
+        }
+        .button-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(33, 150, 243, 0.3);
+        }
+        .button-secondary {
+            background-color: #BBDEFB; /* Light Blue 100 */
+            color: #1A202C; /* Dark gray text */
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        }
+        .button-secondary:hover {
+            background-color: #90CAF9; /* Light Blue 200 on hover */
+            transform: translateY(-1px);
+        }
+        .button-secondary:active {
+            transform: translateY(0);
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 32px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+        .timer {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #EF4444; /* Red for timer, kept for urgency */
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        /* Hide sections by default */
+        .hidden-section {
+            display: none;
+        }
+        /* Custom text colors for consistency */
+        .text-custom-dark {
+            color: #1A202C; /* Dark gray, almost black */
+        }
+        .text-custom-medium {
+            color: #4A5568; /* Medium gray */
+        }
+        .text-custom-light {
+            color: #718096; /* Light gray */
+        }
+        .text-accent {
+            color: #2196F3; /* Primary blue */
+        }
+        .testimonial-card {
+            background-color: #003366; /* Deep Blue */
+            color: white; /* White text for contrast */
+            border-radius: 30px; /* Very rounded corners */
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
+            display: flex; /* Use flexbox for centering content */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center; /* Center text horizontally */
+            min-height: 200px; /* Ensure some height for content */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .testimonial-card:hover {
+            transform: translateY(-5px); /* More pronounced lift on hover */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+        }
+        .testimonial-card p {
+            font-style: italic;
+            color: #E0F2F7; /* Lighter blue for quote text */
+            margin-bottom: 16px; /* More space below quote */
+        }
+        .testimonial-author {
+            font-weight: 700; /* Bolder author name */
+            color: white; /* White author name */
+            margin-top: auto; /* Push author to bottom if card expands */
+        }
+        .testimonial-source {
+            font-size: 0.875rem;
+            color: #BBDEFB; /* Even lighter blue for source */
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #CBD5E1; /* Light gray border */
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 1rem;
+            color: #4A5568;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #2196F3; /* Primary blue on focus */
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+        }
+        .error-message {
+            color: #EF4444; /* Red for error messages */
+            font-size: 0.875rem;
+            margin-top: -10px;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px;
+            }
+            .exam-grid, .subject-grid, .testimonials-grid {
+                grid-template-columns: 1fr;
+            }
+            .button-group button {
+                width: 100%;
+                margin-bottom: 12px;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+            .header-section {
+                padding: 30px 15px;
+            }
+        }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "react": "https://esm.sh/react@^19.1.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.8.0"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-900 text-white">
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body>
+    <div class="header-section">
+        <h1 class="text-3xl sm:text-4xl font-bold mb-4" id="main-title">Math Mock Test Hub</h1>
+        <p class="text-lg sm:text-xl text-gray-200">Prepare for your exams with our comprehensive mock tests.</p>
+    </div>
+
+    <div class="container">
+        <!-- Home Section: Exam Selection -->
+        <div id="home-section">
+            <p class="text-lg text-custom-light text-center mb-8">Select an exam category to start your mock test:</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 exam-grid">
+                <div class="exam-card" data-exam="iit_jam">
+                    <h3 class="text-xl font-semibold text-custom-dark">IIT JAM</h3>
+                    <p class="text-custom-light mt-2">Joint Admission Test for M.Sc.</p>
+                </div>
+                <div class="exam-card" data-exam="csir_net">
+                    <h3 class="text-xl font-semibold text-custom-dark">CSIR NET</h3>
+                    <p class="text-custom-light mt-2">National Eligibility Test</p>
+                </div>
+                <div class="exam-card" data-exam="cuet_pg">
+                    <h3 class="text-xl font-semibold text-custom-dark">CUET PG</h3>
+                    <p class="text-custom-light mt-2">Common University Entrance Test (PG)</p>
+                </div>
+                <div class="exam-card" data-exam="lt_grade_exam">
+                    <h3 class="text-xl font-semibold text-custom-dark">LT Grade Exam</h3>
+                    <p class="text-custom-light mt-2">Assistant Teacher Recruitment</p>
+                </div>
+                <div class="exam-card" data-exam="slst_exam">
+                    <h3 class="text-xl font-semibold text-custom-dark">SLST Exam</h3>
+                    <p class="text-custom-light mt-2">State Level Selection Test</p>
+                </div>
+                <div class="exam-card" data-exam="wbjee">
+                    <h3 class="text-xl font-semibold text-custom-dark">WBJEE</h3>
+                    <p class="text-custom-light mt-2">West Bengal Joint Entrance Exam</p>
+                </div>
+                <div class="exam-card" data-exam="jee_mains">
+                    <h3 class="text-xl font-semibold text-custom-dark">JEE Mains</h3>
+                    <p class="text-custom-light mt-2">Joint Entrance Examination (Main)</p>
+                </div>
+                <!-- Add more exam categories as needed -->
+            </div>
+
+            <!-- Testimonials Section -->
+            <div class="mt-12">
+                <h2 class="text-2xl font-bold text-center text-custom-dark mb-8">What Our Students Say</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 testimonials-grid">
+                    <div class="testimonial-card">
+                        <p>"This platform transformed my exam preparation! The subject-wise tests helped me pinpoint my weaknesses and improve significantly. Highly recommended for any math student."</p>
+                        <div class="testimonial-author">Ananya Sharma</div>
+                        <div class="testimonial-source">IIT JAM Aspirant</div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"The questions are challenging and perfectly aligned with the CSIR NET syllabus. The instant feedback on answers is a game-changer for effective learning."</p>
+                        <div class="testimonial-author">Rahul Singh</div>
+                        <div class="testimonial-source">CSIR NET Candidate</div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Navigating through different subjects for CUET PG was so easy. The clean interface and accurate math rendering made my study sessions much more productive."</p>
+                        <div class="testimonial-author">Priya Kumari</div>
+                        <div class="testimonial-source">CUET PG Student</div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"A fantastic resource for LT Grade Exam. The variety of questions and the timer feature really simulated the actual test environment. My confidence has boosted!"</p>
+                        <div class="testimonial-author">Saurabh Das</div>
+                        <div class="testimonial-source">LT Grade Exam Prep</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Section: Hidden by default -->
+        <div id="registration-section" class="hidden-section">
+            <h2 class="text-2xl font-bold text-center text-custom-dark mb-6">Enter Your Details to Proceed</h2>
+            <p class="text-lg text-custom-light text-center mb-8">Please provide your information and the passkey to access the <span id="registration-exam-title-display" class="font-semibold text-accent"></span> mock test subjects.</p>
+
+            <div class="registration-card">
+                <div class="mb-4">
+                    <label for="student-name" class="block text-custom-medium text-sm font-medium mb-2">Full Name:</label>
+                    <input type="text" id="student-name" class="form-input" placeholder="e.g., John Doe">
+                    <p id="name-error" class="error-message hidden">Please enter your full name.</p>
+                </div>
+                <div class="mb-4">
+                    <label for="student-email" class="block text-custom-medium text-sm font-medium mb-2">Gmail Address:</label>
+                    <input type="email" id="student-email" class="form-input" placeholder="e.g., john.doe@gmail.com">
+                    <p id="email-error" class="error-message hidden">Please enter a valid Gmail address.</p>
+                </div>
+                <div class="mb-4">
+                    <label for="student-place" class="block text-custom-medium text-sm font-medium mb-2">Your City/Place:</label>
+                    <input type="text" id="student-place" class="form-input" placeholder="e.g., New York, USA">
+                    <p id="place-error" class="error-message hidden">Please enter your city or place.</p>
+                </div>
+                <div class="mb-6">
+                    <label for="exam-passkey" class="block text-custom-medium text-sm font-medium mb-2">Exam Passkey:</label>
+                    <input type="password" id="exam-passkey" class="form-input" placeholder="Enter passkey for this exam">
+                    <p id="passkey-error" class="error-message hidden">Incorrect passkey. Please try again.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row justify-between mt-6 button-group">
+                    <button id="back-to-exams-from-registration" class="button-secondary px-6 py-3 rounded-lg mb-4 sm:mb-0 sm:mr-4">Back to Exams</button>
+                    <button id="proceed-to-subjects-btn" class="button-primary px-6 py-3 rounded-lg">Proceed to Subjects</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject Selection Section: Hidden by default -->
+        <div id="subject-selection-section" class="hidden-section">
+            <p class="text-lg text-custom-light text-center mb-8" id="subject-selection-info">Select a subject for <span id="current-exam-title-display" class="font-semibold text-accent"></span>:</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 subject-grid" id="subject-grid">
+                <!-- Subject cards will be dynamically loaded here -->
+            </div>
+            <button id="back-to-exams-from-subjects" class="button-secondary w-full mt-6 px-6 py-3 rounded-lg">Back to Exams</button>
+        </div>
+
+        <!-- Quiz Section: Hidden by default -->
+        <div id="quiz-section" class="hidden-section">
+            <div class="timer" id="timer">Time Left: 10:00</div>
+
+            <div class="question-card">
+                <p class="text-lg font-semibold text-custom-medium mb-4" id="question-text">Question will appear here.</p>
+                <div id="options-container" class="space-y-4">
+                    <!-- Options will be dynamically loaded here -->
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-6 button-group">
+                <button id="prev-btn" class="button-secondary px-6 py-3 rounded-lg">Previous</button>
+                <button id="next-btn" class="button-primary px-6 py-3 rounded-lg">Next</button>
+            </div>
+
+            <button id="submit-btn" class="button-primary w-full mt-4 px-6 py-3 rounded-lg">Submit Test</button>
+            <button id="back-to-subjects-btn" class="button-secondary w-full mt-4 px-6 py-3 rounded-lg">Back to Subjects</button>
+            <button id="back-to-exams-from-quiz-btn" class="button-secondary w-full mt-4 px-6 py-3 rounded-lg">Back to Exams Home</button>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="results-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold text-custom-dark mb-4">Test Results</h2>
+            <p id="score-display" class="text-xl text-custom-medium mb-6">Your score: 0/0</p>
+            <button id="download-report-card-btn" class="button-primary px-6 py-3 rounded-lg mt-4">Download Report Card (PDF)</button>
+            <button id="close-modal-btn" class="button-secondary px-6 py-3 rounded-lg mt-4">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Data structure for questions for different exams and their subjects
+        const quizData = {
+            "iit_jam": {
+                passkey: "jam2025",
+                "abstract_algebra": [
+                    {
+                        question: "If $G$ is a group such that $(ab)^2 = a^2b^2$ for all $a, b \\in G$, then $G$ is:",
+                        options: ["Cyclic", "Abelian", "Non-abelian", "Finite"],
+                        answer: "Abelian"
+                    },
+                    {
+                        question: "The number of elements of order 2 in the group $(\\mathbb{Z}_8, +)$ is:",
+                        options: ["0", "1", "2", "3"],
+                        answer: "1"
+                    },
+                    {
+                        question: "Which of the following is a field?",
+                        options: ["$(\\mathbb{Z}, +, \\cdot)$", "$(\\mathbb{Q}, +, \\cdot)$", "$(\\mathbb{Z}_4, +, \\cdot)$", "$(\\text{M}_2(\\mathbb{R}), +, \\cdot)$"],
+                        answer: "$(\\mathbb{Q}, +, \\cdot)$"
+                    }
+                ],
+                "linear_algebra": [
+                    {
+                        question: "If $A$ is a $3 \\times 3$ matrix with $\\text{det}(A) = 5$, then $\\text{det}(2A)$ is:",
+                        options: ["10", "20", "40", "80"],
+                        answer: "40"
+                    },
+                    {
+                        question: "Which of the following is a subspace of $\\mathbb{R}^3$?",
+                        options: ["$\\lbrace (x,y,z) | x+y+z=1 \\rbrace$", "$\\lbrace (x,y,z) | x=y=z \\rbrace$", "$\\lbrace (x,y,z) | xy=0 \\rbrace$", "$\\lbrace (x,y,z) | x^2+y^2+z^2=1 \\rbrace$"],
+                        answer: "$\\lbrace (x,y,z) | x=y=z \\rbrace$"
+                    },
+                    {
+                        question: "The eigenvalues of the matrix $\\begin{pmatrix} 2 & 0 \\\\ 0 & 3 \\end{pmatrix}$ are:",
+                        options: ["2, 3", "0, 2", "0, 3", "5, 0"],
+                        answer: "2, 3"
+                    }
+                ],
+                "ordinary_differential_equation": [
+                    {
+                        question: "The general solution of $\\frac{dy}{dx} = y$ is:",
+                        options: ["$y = cx$", "$y = c e^x$", "$y = c \\ln x$", "$y = c/x$"],
+                        answer: "$y = c e^x$"
+                    },
+                    {
+                        question: "The order of the differential equation $\\frac{d^2y}{dx^2} + (\\frac{dy}{dx})^3 + y = 0$ is:",
+                        options: ["1", "2", "3", "4"],
+                        answer: "2"
+                    }
+                ],
+                "geometry_2d_3d": [
+                    {
+                        question: "The equation of a circle with center $(0,0)$ and radius 5 is:",
+                        options: ["$x^2+y^2=5$", "$x^2+y^2=25$", "$x+y=5$", "$2x+2y=25$"],
+                        answer: "$x^2+y^2=25$"
+                    },
+                    {
+                        question: "What is the distance between points $(1,2,3)$ and $(4,5,6)$?",
+                        options: ["$\\sqrt{3}$", "$\\sqrt{18}$", "$\\sqrt{27}$", "$\\sqrt{54}$"],
+                        answer: "$\\sqrt{27}$"
+                    }
+                ],
+                "statistics_and_probability": [
+                    {
+                        question: "If a fair coin is tossed three times, what is the probability of getting exactly two heads?",
+                        options: ["1/8", "3/8", "1/2", "5/8"],
+                        answer: "3/8"
+                    },
+                    {
+                        question: "Which of the following is a measure of central tendency?",
+                        options: ["Variance", "Standard Deviation", "Range", "Median"],
+                        answer: "Median"
+                    }
+                ],
+                "lpp": [
+                    {
+                        question: "In a Linear Programming Problem, the feasible region is always:",
+                        options: ["A circle", "A polygon", "A convex set", "A non-convex set"],
+                        answer: "A convex set"
+                    },
+                    {
+                        question: "The objective function in LPP is to be:",
+                        options: ["Maximized only", "Minimized only", "Maximized or minimized", "None of these"],
+                        answer: "Maximized or minimized"
+                    }
+                ],
+                "complex_analysis": [
+                    {
+                        question: "The value of $i^{10}$ is:",
+                        options: ["1", "-1", "$i$", "$-i$"],
+                        answer: "-1"
+                    },
+                    {
+                        question: "Which of the following functions is analytic?",
+                        options: ["$f(z) = \\text{Re}(z)$", "$f(z) = \\bar{z}$", "$f(z) = z^3$", "$f(z) = |z|^2$"],
+                        answer: "$f(z) = z^3$"
+                    }
+                ],
+                "real_analysis": [
+                    {
+                        question: "Which of the following sequences converges?",
+                        options: ["$a_n = n^2$", "$a_n = (-1)^n$", "$a_n = \\frac{1}{n}$", "$a_n = \\sin(n)$"],
+                        answer: "$a_n = \\frac{1}{n}$"
+                    },
+                    {
+                        question: "Every continuous function on a closed and bounded interval is:",
+                        options: ["Differentiable", "Integrable", "Bounded", "All of the above"],
+                        answer: "All of the above"
+                    }
+                ],
+                "vector_algebra": [
+                    {
+                        question: "If $\\vec{a} = (1,2,3)$ and $\\vec{b} = (4,5,6)$, then $\\vec{a} \\cdot \\vec{b}$ is:",
+                        options: ["12", "18", "24", "32"],
+                        answer: "32"
+                    },
+                    {
+                        question: "The magnitude of the vector $\\vec{v} = 3\\hat{i} - 4\\hat{j}$ is:",
+                        options: ["1", "5", "7", "25"],
+                        answer: "5"
+                    }
+                ],
+                "numerical_analysis": [
+                    {
+                        question: "Which method is used for finding roots of an equation?",
+                        options: ["Newton-Raphson method", "Euler's method", "Runge-Kutta method", "Gauss elimination method"],
+                        answer: "Newton-Raphson method"
+                    },
+                    {
+                        question: "The formula for forward difference operator $\\Delta f(x)$ is:",
+                        options: ["$f(x+h) - f(x)$", "$f(x) - f(x-h)$", "$f(x+h)$", "$f(x-h)$"],
+                        answer: "$f(x+h) - f(x)$"
+                    }
+                ],
+                "differential_calculus": [
+                    {
+                        question: "The derivative of $f(x) = x^3$ is:",
+                        options: ["$x^2$", "$2x^2$", "$3x^2$", "$3x$"],
+                        answer: "$3x^2$"
+                    },
+                    {
+                        question: "If $y = \\ln x$, then $\\frac{dy}{dx}$ is:",
+                        options: ["$x$", "$1$", "$1/x$", "$e^x$"],
+                        answer: "$1/x$"
+                    }
+                ],
+                "integral_calculus": [
+                    {
+                        question: "Evaluate $\\int x^2 dx$:",
+                        options: ["$x^3 + C$", "$2x + C$", "$\\frac{x^3}{3} + C$", "$\\frac{x^2}{2} + C$"],
+                        answer: "$\\frac{x^3}{3} + C$"
+                    },
+                    {
+                        question: "$\\int \\sin(x) dx$ is:",
+                        options: ["$\\cos(x) + C$", "$-\\cos(x) + C$", "$\\sin(x) + C$", "$-\\sin(x) + C$"],
+                        answer: "$-\\cos(x) + C$"
+                    }
+                ]
+            },
+            "csir_net": {
+                passkey: "csir2025",
+                "abstract_algebra": [
+                    {
+                        question: "CSIR NET AA Q1: Which of the following is a normal subgroup of $S_3$?",
+                        options: ["$\\lbrace e, (12) \\rbrace$", "$\\lbrace e, (123), (132) \\rbrace$", "$S_3$", "$\\lbrace e, (13) \\rbrace$"],
+                        answer: "$\\lbrace e, (123), (132) \\rbrace$"
+                    },
+                    {
+                        question: "CSIR NET AA Q2: The number of ideals in $\\mathbb{Z}_6$ is:",
+                        options: ["1", "2", "3", "4"],
+                        answer: "4"
+                    }
+                ],
+                "linear_algebra": [
+                    {
+                        question: "CSIR NET LA Q1: The dimension of the vector space of all $2 \\times 2$ real symmetric matrices is:",
+                        options: ["1", "2", "3", "4"],
+                        answer: "3"
+                    },
+                    {
+                        question: "CSIR NET LA Q2: For a linear transformation $T: V \\to W$, $\\text{dim}(V) = \\text{dim}(\\text{Ker}(T)) + \\text{dim}(\\text{Im}(T))$ is known as as:",
+                        options: ["Rank-Nullity Theorem", "Cayley-Hamilton Theorem", "Spectral Theorem", "Fundamental Theorem of Algebra"],
+                        answer: "Rank-Nullity Theorem"
+                    }
+                ],
+                "ordinary_differential_equation": [
+                    {
+                        question: "CSIR NET ODE Q1: The integrating factor for the differential equation $\\frac{dy}{dx} + P(x)y = Q(x)$ is:",
+                        options: ["$e^{\\int P(x)dx}$", "$e^{-\\int P(x)dx}$", "$\\int P(x)dx$", "$P(x)$"],
+                        answer: "$e^{\\int P(x)dx}$"
+                    },
+                    {
+                        question: "CSIR NET ODE Q2: The Wronskian of $e^x$ and $e^{2x}$ is:",
+                        options: ["$e^x$", "$e^{2x}$", "$e^{3x}$", "$0$"],
+                        answer: "$e^{3x}$"
+                    }
+                ],
+                "geometry_2d_3d": [
+                    {
+                        question: "CSIR NET Geo Q1: The equation of the plane passing through $(1,0,0)$, $(0,1,0)$, and $(0,0,1)$ is:",
+                        options: ["$x+y+z=0$", "$x+y+z=1$", "$x+y+z=2$", "$x-y+z=1$"],
+                        answer: "$x+y+z=1$"
+                    },
+                    {
+                        question: "CSIR NET Geo Q2: The angle between the lines $y=x$ and $y=-x$ is:",
+                        options: ["$0^{\\circ}$", "$45^{\\circ}$", "$90^{\\circ}$", "$180^{\\circ}$"],
+                        answer: "$90^{\\circ}$"
+                    }
+                ],
+                "statistics_and_probability": [
+                    {
+                        question: "CSIR NET SP Q1: For a normal distribution, approximately what percentage of data falls within one standard deviation of the mean?",
+                        options: ["50%", "68%", "95%", "99.7%"],
+                        answer: "68%"
+                    },
+                    {
+                        question: "CSIR NET SP Q2: If $P(A) = 0.5$, $P(B) = 0.4$, and $P(A \\cap B) = 0.2$, then $P(A \\cup B)$ is:",
+                        options: ["0.7", "0.8", "0.9", "1.0"],
+                        answer: "0.7"
+                    }
+                ],
+                "lpp": [
+                    {
+                        question: "CSIR NET LPP Q1: The method used to solve LPP graphically is applicable for problems with at most:",
+                        options: ["1 variable", "2 variables", "3 variables", "Any number of variables"],
+                        answer: "2 variables"
+                    },
+                    {
+                        question: "CSIR NET LPP Q2: An optimal solution to an LPP always occurs at a/an:",
+                        options: ["Interior point", "Boundary point", "Vertex of the feasible region", "Origin"],
+                        answer: "Vertex of the feasible region"
+                    }
+                ],
+                "complex_analysis": [
+                    {
+                        question: "CSIR NET CA Q1: The residue of $f(z) = \\frac{1}{z(z-1)}$ at $z=0$ is:",
+                        options: ["0", "1", "-1", "$i$"],
+                        answer: "-1"
+                    },
+                    {
+                        question: "CSIR NET CA Q2: Cauchy's Integral Formula states that $\\oint_C \\frac{f(z)}{z-a} dz = $",
+                        options: ["$0$", "$2\\pi i f(a)$", "$f(a)$", "$2\\pi f(a)$"],
+                        answer: "$2\\pi i f(a)$"
+                    }
+                ],
+                "real_analysis": [
+                    {
+                        question: "CSIR NET RA Q1: A set $S \\subseteq \\mathbb{R}$ is compact if and only if it is:",
+                        options: ["Open and bounded", "Closed and unbounded", "Closed and bounded", "Open and unbounded"],
+                        answer: "Closed and bounded"
+                    },
+                    {
+                        question: "CSIR NET RA Q2: The series $\\sum_{n=1}^{\\infty} \\frac{1}{n^p}$ converges if and only if:",
+                        options: ["$p < 1$", "$p \\le 1$", "$p > 1$", "$p \\ge 1$"],
+                        answer: "$p > 1$"
+                    }
+                ],
+                "vector_algebra": [
+                    {
+                        question: "CSIR NET VA Q1: If $\\vec{A}$ and $\\vec{B}$ are two vectors, then $|\\vec{A} \\times \\vec{B}|^2 + (\\vec{A} \\cdot \\vec{B})^2$ equals:",
+                        options: ["$|\\vec{A}|^2 + |\\vec{B}|^2$", "$|\\vec{A}|^2 |\\vec{B}|^2$", "$|\\vec{A}|^2 - |\\vec{B}|^2$", "$0$"],
+                        answer: "$|\\vec{A}|^2 |\\vec{B}|^2$"
+                    },
+                    {
+                        question: "CSIR NET VA Q2: The scalar triple product $\\vec{a} \\cdot (\\vec{b} \\times \\vec{c})$ represents the volume of a:",
+                        options: ["Triangle", "Parallelogram", "Parallelepiped", "Sphere"],
+                        answer: "Parallelepiped"
+                    }
+                ],
+                "numerical_analysis": [
+                    {
+                        question: "CSIR NET NA Q1: The condition for convergence of Newton-Raphson method is:",
+                        options: ["$|f(x)f''(x)| < |f'(x)|^2$", "$|f(x)f'(x)| < |f''(x)|^2$", "$|f(x)f''(x)| > |f'(x)|^2$", "$|f(x)f'(x)| > |f''(x)|^2$"],
+                        answer: "$|f(x)f''(x)| < |f'(x)|^2$"
+                    }
+                ]
+            },
+            "cuet_pg": {
+                passkey: "cuet2025",
+                "abstract_algebra": [
+                    {
+                        question: "CUET PG AA Q1: The identity element in the group $(\\mathbb{Z}, +)$ is:",
+                        options: ["1", "-1", "0", "None of these"],
+                        answer: "0"
+                    },
+                    {
+                        question: "CUET PG AA Q2: The order of the element 3 in the group $(\\mathbb{Z}_6, +_6)$ is:",
+                        options: ["1", "2", "3", "6"],
+                        answer: "2"
+                    }
+                ],
+                "linear_algebra": [
+                    {
+                        question: "CUET PG LA Q1: If $A$ is a $2 \\times 2$ matrix and $A^T = A$, then $A$ is a:",
+                        options: ["Symmetric matrix", "Skew-symmetric matrix", "Identity matrix", "Zero matrix"],
+                        answer: "Symmetric matrix"
+                    },
+                    {
+                        question: "CUET PG LA Q2: The product of two matrices $AB$ is defined if the number of columns of $A$ is equal to the number of rows of $B$.",
+                        options: ["Always true", "Always false", "True if A is square", "False if B is square"],
+                        answer: "Always true"
+                    }
+                ],
+                "ordinary_differential_equation": [
+                    {
+                        question: "CUET PG ODE Q1: The degree of the differential equation $(\\frac{dy}{dx})^2 + y = x$ is:",
+                        options: ["1", "2", "3", "Not defined"],
+                        answer: "2"
+                    },
+                    {
+                        question: "CUET PG ODE Q2: A differential equation of the form $M(x,y)dx + N(x,y)dy = 0$ is exact if:",
+                        options: ["$\\frac{\\partial M}{\\partial x} = \\frac{\\partial N}{\\partial y}$", "$\\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$", "$M=N$", "$M=-N$"],
+                        answer: "$\\frac{\\partial M}{\\partial y} = \\frac{\\partial N}{\\partial x}$"
+                    }
+                ],
+                "geometry_2d_3d": [
+                    {
+                        question: "CUET PG Geo Q1: The slope of the line passing through $(2,3)$ and $(4,7)$ is:",
+                        options: ["1", "2", "3", "4"],
+                        answer: "2"
+                    },
+                    {
+                        question: "CUET PG Geo Q2: The distance of the point $(1,2,3)$ from the origin is:",
+                        options: ["$\\sqrt{6}$", "$\\sqrt{14}$", "$14$", "$6$"],
+                        answer: "$\\sqrt{14}$"
+                    }
+                ],
+                "statistics_and_probability": [
+                    {
+                        question: "CUET PG SP Q1: The mean of the data set $\\{2, 4, 6, 8\\}$ is:",
+                        options: ["4", "5", "6", "7"],
+                        answer: "5"
+                    },
+                    {
+                        question: "CUET PG SP Q2: The probability of an impossible event is:",
+                        options: ["0", "1", "0.5", "Cannot be determined"],
+                        answer: "0"
+                    }
+                ],
+                "lpp": [
+                    {
+                        question: "CUET PG LPP Q1: The constraints in an LPP are generally of the form:",
+                        options: ["Equations only", "Inequalities only", "Both equations and inequalities", "None of these"],
+                        answer: "Both equations and inequalities"
+                    },
+                    {
+                        question: "CUET PG LPP Q2: The feasible region in an LPP is a set of points that satisfy:",
+                        options: ["Only the objective function", "Only the constraints", "Both objective function and constraints", "None of these"],
+                        answer: "Only the constraints"
+                    }
+                ],
+                "complex_analysis": [
+                    {
+                        question: "CUET PG CA Q1: What is the conjugate of $3 + 4i$?",
+                        options: ["$3 - 4i$", "$-3 + 4i$", "$-3 - 4i$", "$4 + 3i$"],
+                        answer: "$3 - 4i$"
+                    },
+                    {
+                        question: "CUET PG CA Q2: The modulus of the complex number $z = 1 + i$ is:",
+                        options: ["1", "$\\sqrt{2}$", "2", "0"],
+                        answer: "$\\sqrt{2}$"
+                    }
+                ],
+                "real_analysis": [
+                    {
+                        question: "CUET PG RA Q1: The set of rational numbers is:",
+                        options: ["Countable", "Uncountable", "Finite", "Empty"],
+                        answer: "Countable"
+                    },
+                    {
+                        question: "CUET PG RA Q2: The supremum of the set $\\{1 - 1/n : n \\in \\mathbb{N}\\}$ is:",
+                        options: ["0", "1", "2", "$\\infty$"],
+                        answer: "1"
+                    }
+                ],
+                "vector_algebra": [
+                    {
+                        question: "CUET PG VA Q1: The dot product of two perpendicular vectors is:",
+                        options: ["0", "1", "-1", "Depends on magnitude"],
+                        answer: "0"
+                    },
+                    {
+                        question: "CUET PG VA Q2: If $\\vec{a} = 2\\hat{i} + 3\\hat{j}$ and $\\vec{b} = \\hat{i} - 2\\hat{j}$, then $\\vec{a} + \\vec{b}$ is:",
+                        options: ["$3\\hat{i} + \\hat{j}$", "$\\hat{i} + 5\\hat{j}$", "$3\\hat{i} - \\hat{j}$", "$\\hat{i} + \\hat{j}$"],
+                        answer: "$3\\hat{i} + \\hat{j}$"
+                    }
+                ],
+                "differential_calculus": [
+                    {
+                        question: "CUET PG DC Q1: The derivative of $f(x) = x^3$ is:",
+                        options: ["$x^2$", "$2x^2$", "$3x^2$", "$3x$"],
+                        answer: "$3x^2$"
+                    },
+                    {
+                        question: "If $y = \\ln x$, then $\\frac{dy}{dx}$ is:",
+                        options: ["$x$", "$1$", "$1/x$", "$e^x$"],
+                        answer: "$1/x$"
+                    }
+                ],
+                "integral_calculus": [
+                    {
+                        question: "CUET PG IC Q1: Evaluate $\\int x^2 dx$:",
+                        options: ["$x^3 + C$", "$2x + C$", "$\\frac{x^3}{3} + C$", "$\\frac{x^2}{2} + C$"],
+                        answer: "$\\frac{x^3}{3} + C$"
+                    },
+                    {
+                        question: "CUET PG IC Q2: $\\int \\sin(x) dx$ is:",
+                        options: ["$\\cos(x) + C$", "$-\\cos(x) + C$", "$\\sin(x) + C$", "$-\\sin(x) + C$"],
+                        answer: "$-\\cos(x) + C$"
+                    }
+                ]
+            },
+            "lt_grade_exam": {
+                passkey: "ltgrade2025",
+                "abstract_algebra": [
+                    {
+                        question: "LT Grade AA Q1: Which of the following sets forms a group under addition?",
+                        options: ["Natural numbers", "Integers", "Irrational numbers", "Prime numbers"],
+                        answer: "Integers"
+                    }
+                ],
+                "linear_algebra": [
+                    {
+                        question: "LT Grade LA Q1: For a square matrix $A$, which condition guarantees its invertibility?",
+                        options: ["Det(A) = 0", "Det(A) ≠ 0", "A is symmetric", "A is diagonal"],
+                        answer: "Det(A) ≠ 0"
+                    }
+                ],
+                "ordinary_differential_equation": [
+                    {
+                        question: "LT Grade ODE Q1: The general solution of the differential equation $\\frac{dy}{dx} = x$ is:",
+                        options: ["$y = x^2 + C$", "$y = x^2/2 + C$", "$y = x + C$", "$y = C$"],
+                        answer: "$y = x^2/2 + C$"
+                    }
+                ],
+                "geometry_2d_3d": [
+                    {
+                        question: "LT Grade Geo Q1: How many diagonals does a hexagon have?",
+                        options: ["6", "7", "8", "9"],
+                        answer: "9"
+                    }
+                ],
+                "statistics_and_probability": [
+                    {
+                        question: "LT Grade SP Q1: In the data set $\\{1, 2, 2, 3, 4, 5\\}$, what is the mode?",
+                        options: ["1", "2", "3", "4"],
+                        answer: "2"
+                    }
+                ],
+                "real_analysis": [
+                    {
+                        question: "LT Grade RA Q1: A sequence that converges in $\\mathbb{R}$ must also be:",
+                        options: ["Unbounded", "Divergent", "Bounded", "Oscillating"],
+                        answer: "Bounded"
+                    }
+                ],
+                "differential_calculus": [
+                    {
+                        question: "LT Grade DC Q1: What is the derivative of $f(x) = e^x$?",
+                        options: ["$x e^{x-1}$", "$e^x$", "$e^{x+1}$", "$\\ln x$"],
+                        answer: "$e^x$"
+                    }
+                ],
+                "integral_calculus": [
+                    {
+                        question: "LT Grade IC Q1: Evaluate $\\int \\frac{1}{x} dx$ for $x > 0$:",
+                        options: ["$x + C$", "$\\ln x + C$", "$1 + C$", "$x^2/2 + C$"],
+                        answer: "$\\ln x + C$"
+                    }
+                ]
+            },
+            "slst_exam": {
+                passkey: "slst2025",
+                "abstract_algebra": [
+                    {
+                        question: "SLST AA Q1: Which of the following is a subgroup of $(\\mathbb{Z}, +)$?",
+                        options: ["Set of odd integers", "Set of prime numbers", "Set of even integers", "Set of natural numbers"],
+                        answer: "Set of even integers"
+                    },
+                    {
+                        question: "SLST AA Q2: The order of the element $g$ in a finite group $G$ is the smallest positive integer $n$ such that:",
+                        options: ["$g^n = e$", "$g^n = g$", "$g^n = 1$", "$g^n = 0$"],
+                        answer: "$g^n = e$"
+                    },
+                    {
+                        question: "SLST AA Q3: If $H$ is a subgroup of a group $G$, then the number of distinct left cosets of $H$ in $G$ is equal to the number of distinct right cosets of $H$ in $G$. This number is called the:",
+                        options: ["Order of H", "Index of H in G", "Degree of H", "Rank of H"],
+                        answer: "Index of H in G"
+                    },
+                    {
+                        question: "SLST AA Q4: A group $G$ is abelian if and only if for all $a, b \\in G$, which of the following holds?",
+                        options: ["$ab = ba$", "$a^2 = e$", "$ab = e$", "$a = b$"],
+                        answer: "$ab = ba$"
+                    },
+                    {
+                        question: "SLST AA Q5: Which of the following is NOT a group under multiplication?",
+                        options: ["$(\\mathbb{Q}^*, \\cdot)$ (non-zero rational numbers)", "$(\\mathbb{R}^*, \\cdot)$ (non-zero real numbers)", "$(\\mathbb{Z}, \\cdot)$ (integers)", "$(\\mathbb{C}^*, \\cdot)$ (non-zero complex numbers)"],
+                        answer: "$(\\mathbb{Z}, \\cdot)$ (integers)"
+                    },
+                    {
+                        question: "SLST AA Q6: The set of all $n \\times n$ invertible matrices over a field $F$ forms a group under matrix multiplication. This group is called the:",
+                        options: ["Orthogonal Group", "Special Linear Group", "General Linear Group", "Unitary Group"],
+                        answer: "General Linear Group"
+                    },
+                    {
+                        question: "SLST AA Q7: If $\\phi: G \\to H$ is a group homomorphism, then $\\text{Ker}(\\phi)$ is a:",
+                        options: ["Subgroup of G", "Normal subgroup of G", "Subgroup of H", "Normal subgroup of H"],
+                        answer: "Normal subgroup of G"
+                    },
+                    {
+                        question: "SLST AA Q8: The order of the cyclic group $\\mathbb{Z}_n$ is:",
+                        options: ["$n-1$", "$n$", "$n+1$", "$n^2$"],
+                        answer: "$n$"
+                    },
+                    {
+                        question: "SLST AA Q9: Every cyclic group is:",
+                        options: ["Abelian", "Non-abelian", "Finite", "Simple"],
+                        answer: "Abelian"
+                    },
+                    {
+                        question: "SLST AA Q10: The number of generators of a cyclic group of order $n$ is $\\phi(n)$, where $\\phi$ is Euler's totient function. How many generators does $\\mathbb{Z}_6$ have?",
+                        options: ["1", "2", "3", "4"],
+                        answer: "2"
+                    },
+                    {
+                        question: "SLST AA Q11: Lagrange's Theorem states that if $H$ is a subgroup of a finite group $G$, then the order of $H$ divides the order of $G$. If $|G|=20$ and $|H|=6$, what can be said?",
+                        options: ["H is a subgroup of G", "H is not a subgroup of G", "H is a normal subgroup", "G is cyclic"],
+                        answer: "H is not a subgroup of G"
+                    },
+                    {
+                        question: "SLST AA Q12: The set of all permutations of $n$ distinct objects forms a group under composition of permutations. This group is called the:",
+                        options: ["Alternating Group", "Dihedral Group", "Symmetric Group", "Cyclic Group"],
+                        answer: "Symmetric Group"
+                    },
+                    {
+                        question: "SLST AA Q13: The alternating group $A_n$ is the subgroup of $S_n$ consisting of all:",
+                        options: ["Even permutations", "Odd permutations", "Cyclic permutations", "Transpositions"],
+                        answer: "Even permutations"
+                    },
+                    {
+                        question: "SLST AA Q14: The center of a group $G$, denoted $Z(G)$, is the set of elements that commute with every element of $G$. $Z(G)$ is always a:",
+                        options: ["Subgroup, but not normal", "Normal subgroup", "Cyclic subgroup", "Trivial subgroup"],
+                        answer: "Normal subgroup"
+                    },
+                    {
+                        question: "SLST AA Q15: The direct product of two groups $G_1$ and $G_2$, denoted $G_1 \\times G_2$, is a group with elements $(g_1, g_2)$ and operation $(g_1, g_2)(g'_1, g'_2) = (g_1g'_1, g_2g'_2)$. The identity element is:",
+                        options: ["$(e_1, e_2)$", "$(e_1, g_2)$", "$(g_1, e_2)$", "$(1, 1)$"],
+                        answer: "$(e_1, e_2)$"
+                    },
+                    {
+                        question: "SLST AA Q16: A group $G$ is simple if its only normal subgroups are the trivial subgroup $\\{e\\}$ and $G$ itself. Which of the following is a simple group?",
+                        options: ["$\\mathbb{Z}_4$", "$S_3$", "$A_5$", "$\\mathbb{Z}_6$"],
+                        answer: "$A_5$"
+                    },
+                    {
+                        question: "SLST AA Q17: The order of the element $(1,2,3)$ in $S_4$ is:",
+                        options: ["1", "2", "3", "4"],
+                        answer: "3"
+                    },
+                    {
+                        question: "SLST AA Q18: If $G$ is a group of order $p^n$ where $p$ is a prime number, then $Z(G)$ is:",
+                        options: ["Trivial", "Cyclic", "Non-trivial", "Abelian"],
+                        answer: "Non-trivial"
+                    },
+                    {
+                        question: "SLST AA Q19: The number of subgroups of $\\mathbb{Z}_p$, where $p$ is a prime number, is:",
+                        options: ["1", "2", "$p$", "$p+1$"],
+                        answer: "2"
+                    },
+                    {
+                        question: "SLST AA Q20: The First Isomorphism Theorem states that if $\\phi: G \\to H$ is a group homomorphism, then $G/\\text{Ker}(\\phi) \\cong \\text{Im}(\\phi)$. Here $\\cong$ denotes:",
+                        options: ["Equality", "Homomorphism", "Isomorphism", "Subgroup"],
+                        answer: "Isomorphism"
+                    },
+                    {
+                        question: "SLST AA Q21: The order of an element $g$ in a finite group $G$ divides the order of the group $G$. This is a direct consequence of:",
+                        options: ["Cayley's Theorem", "Sylow's Theorem", "Lagrange's Theorem", "Fundamental Theorem of Cyclic Groups"],
+                        answer: "Lagrange's Theorem"
+                    },
+                    {
+                        question: "SLST AA Q22: Which of the following is an example of a non-abelian group?",
+                        options: ["$(\\mathbb{Z}, +)$", "$(\\mathbb{R}^*, \\cdot)$", "$S_3$", "$(\\mathbb{Z}_5, +_5)$"],
+                        answer: "$S_3$"
+                    },
+                    {
+                        question: "SLST AA Q23: The set of all integers $\\mathbb{Z}$ forms a group under addition. What is the identity element?",
+                        options: ["1", "-1", "0", "Any integer"],
+                        answer: "0"
+                    },
+                    {
+                        question: "SLST AA Q24: If $G$ is a group and $a \\in G$, the set $\\langle a \\rangle = \\{a^n | n \\in \\mathbb{Z}\\}$ is called the:",
+                        options: ["Normal subgroup", "Quotient group", "Cyclic subgroup generated by $a$", "Center of G"],
+                        answer: "Cyclic subgroup generated by $a$"
+                    },
+                    {
+                        question: "SLST AA Q25: The number of distinct left cosets of a subgroup $H$ in a group $G$ is denoted by:",
+                        options: ["$|H|$", "$|G|$", "$|G:H|$", "$|G| - |H|$"],
+                        answer: "$|G:H|$"
+                    },
+                    {
+                        question: "SLST AA Q26: A homomorphism $\\phi: G \\to H$ is an isomorphism if it is:",
+                        options: ["Injective", "Surjective", "Bijective", "Identity mapping"],
+                        answer: "Bijective"
+                    },
+                    {
+                        question: "SLST AA Q27: The order of the permutation $(1 2 3)(4 5)$ in $S_5$ is:",
+                        options: ["2", "3", "5", "6"],
+                        answer: "6"
+                    },
+                    {
+                        question: "SLST AA Q28: If $G$ is a group and $a \\in G$, then the inverse of $a$ is denoted by:",
+                        options: ["$a'$", "$1/a$", "$a^{-1}$", "$-a$"],
+                        answer: "$a^{-1}$"
+                    },
+                    {
+                        question: "SLST AA Q29: Which of the following is a normal subgroup of any group $G$?",
+                        options: ["The center $Z(G)$", "Any cyclic subgroup", "Any subgroup of prime order", "The set of all elements of order 2"],
+                        answer: "The center $Z(G)$"
+                    },
+                    {
+                        question: "SLST AA Q30: The group of integers modulo $n$ under addition, $(\\mathbb{Z}_n, +_n)$, is always a:",
+                        options: ["Non-abelian group", "Simple group", "Cyclic group", "Dihedral group"],
+                        answer: "Cyclic group"
+                    },
+                    {
+                        question: "SLST AA Q31: If $G$ is a finite group and $p$ is a prime dividing $|G|$, then $G$ has an element of order $p$. This is a statement of:",
+                        options: ["Cauchy's Theorem", "Sylow's First Theorem", "Lagrange's Theorem", "Fundamental Theorem of Finite Abelian Groups"],
+                        answer: "Cauchy's Theorem"
+                    }
+                ],
+                "linear_algebra": [
+                    {
+                        question: "SLST LA Q1: The dimension of the null space of a matrix is called its:",
+                        options: ["Rank", "Nullity", "Determinant", "Trace"],
+                        answer: "Nullity"
+                    }
+                ],
+                "ordinary_differential_equation": [
+                    {
+                        question: "SLST ODE Q1: Which of the following represents a first-order linear differential equation?",
+                        options: ["$y'' + P(x)y' + Q(x)y = R(x)$", "$\\frac{dy}{dx} + P(x)y = Q(x)$", "$(\\frac{dy}{dx})^2 + y = x$", "$\\frac{d^2y}{dx^2} = 0$"],
+                        answer: "$\\frac{dy}{dx} + P(x)y = Q(x)$"
+                    },
+                    {
+                        question: "SLST ODE Q2: The general solution of $y' + y = 0$ is:",
+                        options: ["$y = Ce^x$", "$y = Ce^{-x}$", "$y = Cx$", "$y = C/x$"],
+                        answer: "$y = Ce^{-x}$"
+                    },
+                    {
+                        question: "SLST ODE Q3: The order of the differential equation $\\frac{d^3y}{dx^3} + x^2(\\frac{dy}{dx})^4 + y = \\sin x$ is:",
+                        options: ["1", "2", "3", "4"],
+                        answer: "3"
+                    },
+                    {
+                        question: "SLST ODE Q4: Which of the following is a homogeneous differential equation?",
+                        options: ["$\\frac{dy}{dx} = x+y$", "$\\frac{dy}{dx} = \\frac{x^2+y^2}{xy}$", "$\\frac{dy}{dx} = x^2+y$", "$\\frac{dy}{dx} = \\sin(x)$"],
+                        answer: "$\\frac{dy}{dx} = \\frac{x^2+y^2}{xy}$"
+                    },
+                    {
+                        question: "SLST ODE Q5: The integrating factor for $x\\frac{dy}{dx} + 2y = x^2$ is:",
+                        options: ["$x$", "$x^2$", "$e^x$", "$1/x$"],
+                        answer: "$x^2$"
+                    },
+                    {
+                        question: "SLST ODE Q6: The solution of the separable differential equation $\\frac{dy}{dx} = \\frac{x}{y}$ is:",
+                        options: ["$y^2 = x^2 + C$", "$y = x + C$", "$y^2 = 2x^2 + C$", "$x^2 + y^2 = C$"],
+                        answer: "$y^2 = x^2 + C$"
+                    },
+                    {
+                        question: "SLST ODE Q7: For the differential equation $y'' + 4y = 0$, the characteristic equation is:",
+                        options: ["$m^2 + 4 = 0$", "$m^2 - 4 = 0$", "$m + 4 = 0$", "$m^2 + 4m = 0$"],
+                        answer: "$m^2 + 4 = 0$"
+                    }
+                ],
+                "geometry_2d_3d": [
+                    {
+                        question: "SLST Geo Q1: The equation of a straight line passing through the origin is of the form:",
+                        options: ["$y = mx + c$", "$y = mx$", "$x^2+y^2=r^2$", "$x/a + y/b = 1$"],
+                        answer: "$y = mx$"
+                    }
+                ],
+                "statistics_and_probability": [
+                    {
+                        question: "SLST SP Q1: What is the sum of probabilities of all possible outcomes in a sample space?",
+                        options: ["0", "0.5", "1", "Varies with experiment"],
+                        answer: "1"
+                    }
+                ],
+                "lpp": [
+                    {
+                        question: "SLST LPP Q1: The graphical method for solving Linear Programming Problems primarily uses which concept?",
+                        options: ["Simplex method", "Corner point method", "Big M method", "Dual simplex method"],
+                        answer: "Corner point method"
+                    }
+                ],
+                "complex_analysis": [
+                    {
+                        question: "SLST CA Q1: What is the principal value of $\\arg(z)$ for the complex number $z = -1$?",
+                        options: ["$0$", "$\\pi/2$", "$\\pi$", "$2\\pi$"],
+                        answer: "$\\pi$"
+                    }
+                ],
+                "classical_algebra": [
+                    {
+                        question: "SLST CA Q1: If $\\alpha$ and $\\beta$ are the roots of the quadratic equation $ax^2+bx+c=0$, then $\\alpha + \\beta$ is equal to:",
+                        options: ["$b/a$", "$-b/a$", "$c/a$", "$-c/a$"],
+                        answer: "$-b/a$"
+                    },
+                    {
+                        question: "SLST CA Q2: The number of ways to arrange $n$ distinct objects taken $r$ at a time is given by:",
+                        options: ["$nCr$", "$nPr$", "$n!$", "$r!$"],
+                        answer: "$nPr$"
+                    }
+                ],
+                "real_analysis": [
+                    {
+                        question: "SLST RA Q1: Which of the following best describes the set of real numbers $\\mathbb{R}$?",
+                        options: ["Countable", "Finite", "Uncountable", "Empty"],
+                        answer: "Uncountable"
+                    }
+                ],
+                "vector_algebra": [
+                    {
+                        question: "SLST VA Q1: If two non-zero vectors are parallel, their cross product is:",
+                        options: ["A scalar value", "A vector perpendicular to both", "The zero vector", "A vector parallel to both"],
+                        answer: "The zero vector"
+                    }
+                ],
+                "dynamics": [
+                    {
+                        question: "SLST Dynamics Q1: According to Newton's second law of motion, force ($F$) is related to mass ($m$) and acceleration ($a$) by the equation:",
+                        options: ["$F = m/a$", "$F = a/m$", "$F = ma$", "$F = m+a$"],
+                        answer: "$F = ma$"
+                    },
+                    {
+                        question: "SLST Dynamics Q2: What is the SI unit of force?",
+                        options: ["Joule", "Watt", "Newton", "Pascal"],
+                        answer: "Newton"
+                    }
+                ],
+                "numerical_analysis": [
+                    {
+                        question: "SLST NA Q1: The method of false position is also commonly known as the:",
+                        options: ["Bisection method", "Regula Falsi method", "Secant method", "Newton-Raphson method"],
+                        answer: "Regula Falsi method"
+                    }
+                ],
+                "differential_calculus": [
+                    {
+                        question: "SLST DC Q1: What is the derivative of any constant function?",
+                        options: ["The constant itself", "1", "0", "Undefined"],
+                        answer: "0"
+                    }
+                ],
+                "integral_calculus": [
+                    {
+                        question: "SLST IC Q1: The Fundamental Theorem of Calculus establishes a connection between which two concepts?",
+                        options: ["Addition and Subtraction", "Multiplication and Division", "Differentiation and Integration", "Algebra and Geometry"],
+                        answer: "Differentiation and Integration"
+                    }
+                ]
+            },
+            "wbjee": {
+                passkey: "wbjee2025",
+                "mathematics": [
+                    {
+                        question: "WBJEE Math Q1: If $A = \\begin{pmatrix} 1 & 2 \\\\ 3 & 4 \\end{pmatrix}$, find $A^{-1}$.",
+                        options: ["$\\begin{pmatrix} -2 & 1 \\\\ 3/2 & -1/2 \\end{pmatrix}$", "$\\begin{pmatrix} 2 & -1 \\\\ -3/2 & 1/2 \\end{pmatrix}$", "$\\begin{pmatrix} -2 & 3/2 \\\\ 1 & -1/2 \\end{pmatrix}$", "$\\begin{pmatrix} 4 & -2 \\\\ -3 & 1 \\end{pmatrix}$"],
+                        answer: "$\\begin{pmatrix} -2 & 3/2 \\\\ 1 & -1/2 \\end{pmatrix}$"
+                    },
+                    {
+                        question: "WBJEE Math Q2: The value of $\\lim_{x \\to 0} \\frac{\\sin x}{x}$ is:",
+                        options: ["0", "1", "$\\infty$", "Does not exist"],
+                        answer: "1"
+                    },
+                    {
+                        question: "WBJEE Math Q3: The area bounded by the curve $y=x^2$ and the line $y=4$ is:",
+                        options: ["$8/3$", "$16/3$", "$32/3$", "$4$"],
+                        answer: "$32/3$"
+                    }
+                ],
+                "physics": [
+                    {
+                        question: "WBJEE Physics Q1: What is the SI unit of electric current?",
+                        options: ["Volt", "Ohm", "Ampere", "Watt"],
+                        answer: "Ampere"
+                    },
+                    {
+                        question: "WBJEE Physics Q2: The phenomenon of light bending when it passes from one medium to another is called:",
+                        options: ["Reflection", "Refraction", "Diffraction", "Interference"],
+                        answer: "Refraction"
+                    }
+                ],
+                "chemistry": [
+                    {
+                        question: "WBJEE Chemistry Q1: Which of the following is an inert gas?",
+                        options: ["Oxygen", "Nitrogen", "Argon", "Chlorine"],
+                        answer: "Argon"
+                    },
+                    {
+                        question: "WBJEE Chemistry Q2: The pH of a neutral solution at 25°C is:",
+                        options: ["0", "7", "14", "Depends on concentration"],
+                        answer: "7"
+                    }
+                ]
+            },
+            "jee_mains": {
+                passkey: "jeemains2025",
+                "mathematics": [
+                    {
+                        question: "JEE Mains Math Q1: If $z = x + iy$ and $|z-2i| = |z+2i|$, then the locus of $z$ is:",
+                        options: ["x-axis", "y-axis", "line $y=x$", "circle"],
+                        answer: "x-axis"
+                    },
+                    {
+                        question: "JEE Mains Math Q2: The number of terms in the expansion of $(x+y+z)^n$ is:",
+                        options: ["$n+1$", "$2n+1$", "$\\frac{(n+1)(n+2)}{2}$", "$n^2$"],
+                        answer: "$\\frac{(n+1)(n+2)}{2}$"
+                    },
+                    {
+                        question: "JEE Mains Math Q3: The value of $\\int_{0}^{\\pi/2} \\sin^2 x dx$ is:",
+                        options: ["$\\pi/4$", "$\\pi/2$", "$\\pi$", "$0$"],
+                        answer: "$\\pi/4$"
+                    }
+                ],
+                "physics": [
+                    {
+                        question: "JEE Mains Physics Q1: A body is projected vertically upwards with a velocity $u$. The maximum height attained by it is:",
+                        options: ["$u/2g$", "$u^2/2g$", "$2u/g$", "$2u^2/g$"],
+                        answer: "$u^2/2g$"
+                    },
+                    {
+                        question: "JEE Mains Physics Q2: The unit of magnetic field strength is:",
+                        options: ["Weber", "Tesla", "Henry", "Farad"],
+                        answer: "Tesla"
+                    }
+                ],
+                "chemistry": [
+                    {
+                        question: "JEE Mains Chemistry Q1: Which of the following is the strongest acid?",
+                        options: ["HCl", "HBr", "HF", "HI"],
+                        answer: "HI"
+                    },
+                    {
+                        question: "JEE Mains Chemistry Q2: The general electronic configuration of d-block elements is:",
+                        options: ["$(n-1)d^{1-10}ns^{1-2}$", "$ns^2np^6$", "$ns^1$", "$nf^{1-14}ns^2$"],
+                        answer: "$(n-1)d^{1-10}ns^{1-2}$"
+                    }
+                ]
+            }
+        };
+
+        let currentExamKey = '';
+        let currentSubjectKey = '';
+        let currentQuestions = []; // Questions for the currently selected subject
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Stores user's answers: { questionIndex: selectedOptionValue }
+        let timeLeft = 600; // 10 minutes in seconds
+        let initialTime = 600; // Store initial time for calculating time taken
+        let timerInterval;
+        let testSubmitted = false; // New flag to track test submission status
+        let userProfile = { // Object to store user details
+            name: '',
+            email: '',
+            place: ''
+        };
+
+        // DOM Elements
+        const mainTitle = document.getElementById('main-title'); // Now refers to the title in the header
+        const homeSection = document.getElementById('home-section');
+        const registrationSection = document.getElementById('registration-section');
+        const registrationExamTitleDisplay = document.getElementById('registration-exam-title-display');
+        const studentNameInput = document.getElementById('student-name');
+        const studentEmailInput = document.getElementById('student-email');
+        const studentPlaceInput = document.getElementById('student-place');
+        const examPasskeyInput = document.getElementById('exam-passkey'); // New passkey input
+        const nameError = document.getElementById('name-error');
+        const emailError = document.getElementById('email-error');
+        const placeError = document.getElementById('place-error');
+        const passkeyError = document.getElementById('passkey-error'); // New passkey error
+        const proceedToSubjectsBtn = document.getElementById('proceed-to-subjects-btn');
+        const backToExamsFromRegistrationBtn = document.getElementById('back-to-exams-from-registration');
+        const subjectSelectionSection = document.getElementById('subject-selection-section');
+        const currentExamTitleDisplay = document.getElementById('current-exam-title-display');
+        const subjectGrid = document.getElementById('subject-grid');
+        const quizSection = document.getElementById('quiz-section');
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const timerElement = document.getElementById('timer');
+        const resultsModal = document.getElementById('results-modal');
+        const scoreDisplay = document.getElementById('score-display');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const downloadReportCardBtn = document.getElementById('download-report-card-btn');
+        const backToSubjectsBtn = document.getElementById('back-to-subjects-btn');
+        const backToExamsFromSubjectsBtn = document.getElementById('back-to-exams-from-subjects');
+        const backToExamsFromQuizBtn = document.getElementById('back-to-exams-from-quiz-btn');
+
+
+        /**
+         * Helper to format keys into readable titles (e.g., "iit_jam" -> "IIT JAM").
+         * @param {string} key - The key string.
+         * @returns {string} Formatted title.
+         */
+        function formatKeyToTitle(key) {
+            return key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        /**
+         * Shows a specific section and hides others.
+         * @param {string} sectionId - The ID of the section to show ('home-section', 'registration-section', 'subject-selection-section', or 'quiz-section').
+         */
+        function showView(sectionId) {
+            homeSection.classList.add('hidden-section');
+            registrationSection.classList.add('hidden-section');
+            subjectSelectionSection.classList.add('hidden-section');
+            quizSection.classList.add('hidden-section');
+            clearInterval(timerInterval); // Always clear timer when changing views
+
+            // Update the main title based on the current section
+            if (sectionId === 'home-section') {
+                homeSection.classList.remove('hidden-section');
+                document.querySelector('.header-section h1').textContent = "Math Mock Test Hub"; // Update header title
+                document.querySelector('.header-section p').textContent = "Prepare for your exams with our comprehensive mock tests."; // Update header slogan
+                testSubmitted = false; // Reset submission status
+            } else if (sectionId === 'registration-section') {
+                registrationSection.classList.remove('hidden-section');
+                document.querySelector('.header-section h1').textContent = `Register for ${formatKeyToTitle(currentExamKey)}`; // Update header title
+                document.querySelector('.header-section p').textContent = "Please provide your information and the passkey to access the mock test subjects."; // Update header slogan
+                registrationExamTitleDisplay.textContent = formatKeyToTitle(currentExamKey);
+                // Clear passkey input and hide error when showing registration
+                examPasskeyInput.value = '';
+                passkeyError.classList.add('hidden');
+                testSubmitted = false; // Reset submission status
+            }
+            else if (sectionId === 'subject-selection-section') {
+                subjectSelectionSection.classList.remove('hidden-section');
+                document.querySelector('.header-section h1').textContent = `Subjects for ${formatKeyToTitle(currentExamKey)}`; // Update header title
+                document.querySelector('.header-section p').textContent = "Select a subject to begin your test preparation."; // Update header slogan
+                currentExamTitleDisplay.textContent = formatKeyToTitle(currentExamKey);
+                loadSubjectsForExam(currentExamKey);
+                testSubmitted = false; // Reset submission status
+            } else if (sectionId === 'quiz-section') {
+                quizSection.classList.remove('hidden-section');
+                document.querySelector('.header-section h1').textContent = `${formatKeyToTitle(currentExamKey)} - ${formatKeyToTitle(currentSubjectKey)} Mock Test`; // Update header title
+                document.querySelector('.header-section p').textContent = "Good luck with your test!"; // Update header slogan
+                resetTest(); // Reset and start test for the new subject
+            }
+        }
+
+        /**
+         * Populates the subject grid based on the selected exam.
+         * @param {string} examKey - The key of the selected exam.
+         */
+        function loadSubjectsForExam(examKey) {
+            subjectGrid.innerHTML = ''; // Clear previous subjects
+            // Ensure we are accessing the subjects, not the passkey
+            const subjects = {};
+            for (const key in quizData[examKey]) {
+                if (key !== 'passkey') {
+                    subjects[key] = quizData[examKey][key];
+                }
+            }
+
+            currentExamTitleDisplay.textContent = formatKeyToTitle(examKey);
+
+            if (!subjects || Object.keys(subjects).length === 0) {
+                subjectGrid.innerHTML = '<p class="text-center text-custom-light col-span-full">No subjects available for this exam yet.</p>';
+                return;
+            }
+
+            for (const subjectKey in subjects) {
+                const subjectCard = document.createElement('div');
+                subjectCard.className = 'subject-card';
+                subjectCard.dataset.subject = subjectKey;
+                subjectCard.innerHTML = `<h3 class="text-xl font-semibold text-custom-dark">${formatKeyToTitle(subjectKey)}</h3>`;
+                subjectGrid.appendChild(subjectCard);
+
+                subjectCard.addEventListener('click', (event) => {
+                    currentSubjectKey = event.currentTarget.dataset.subject;
+                    currentQuestions = quizData[currentExamKey][currentSubjectKey];
+                    showView('quiz-section');
+                });
+            }
+        }
+
+        /**
+         * Loads and displays the question at the currentQuestionIndex for the current subject.
+         */
+        function loadQuestion() {
+            if (!currentQuestions || currentQuestions.length === 0) {
+                questionTextElement.textContent = "No questions available for this subject.";
+                optionsContainer.innerHTML = '';
+                updateNavigationButtons();
+                return;
+            }
+
+            const question = currentQuestions[currentQuestionIndex];
+            questionTextElement.textContent = `${currentQuestionIndex + 1}. ${question.question}`;
+            optionsContainer.innerHTML = ''; // Clear previous options
+
+            question.options.forEach((option, index) => {
+                const radioId = `option-${currentQuestionIndex}-${index}`;
+                const isChecked = userAnswers[currentQuestionIndex] === option;
+
+                optionsContainer.innerHTML += `
+                    <div>
+                        <input type="radio" id="${radioId}" name="question-${currentQuestionIndex}" value="${option}" class="hidden" ${isChecked ? 'checked' : ''} ${testSubmitted ? 'disabled' : ''}>
+                        <label for="${radioId}" class="option-label">
+                            <span class="mr-2">${String.fromCharCode(65 + index)}.</span> ${option}
+                        </label>
+                    </div>
+                `;
+            });
+
+            // Apply feedback if the test has been submitted
+            if (testSubmitted) {
+                const correctAnswer = question.answer;
+                const userAnswer = userAnswers[currentQuestionIndex];
+
+                optionsContainer.querySelectorAll('.option-label').forEach(label => {
+                    const radioInput = label.previousElementSibling; // Get the hidden radio input
+                    const optionValue = radioInput.value;
+
+                    // Mark correct answer
+                    if (optionValue === correctAnswer) {
+                        label.classList.add('correct-answer-feedback');
+                    }
+                    // Mark user's incorrect answer
+                    else if (optionValue === userAnswer && userAnswer !== correctAnswer) {
+                        label.classList.add('incorrect-answer-feedback');
+                    }
+                });
+            }
+
+
+            // Re-render LaTeX after content is loaded with a small delay
+            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                console.log("Attempting to typeset MathJax with a delay...");
+                setTimeout(() => {
+                    MathJax.typesetPromise().then(() => {
+                        console.log("MathJax typesetting completed.");
+                    }).catch((err) => console.error("MathJax typesetting failed:", err));
+                }, 50); // Small delay to ensure DOM is updated
+            }
+
+            // Add event listeners to the newly created radio buttons
+            optionsContainer.querySelectorAll(`input[name="question-${currentQuestionIndex}"]`).forEach(radio => {
+                // Only add event listener if test is not submitted
+                if (!testSubmitted) {
+                    radio.addEventListener('change', (event) => {
+                        userAnswers[currentQuestionIndex] = event.target.value;
+                    });
+                }
+            });
+
+            updateNavigationButtons();
+        }
+
+        /**
+         * Updates the state of the Previous and Next buttons based on currentQuestionIndex.
+         */
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === currentQuestions.length - 1;
+
+            console.log(`updateNavigationButtons: Index=${currentQuestionIndex}, Total=${currentQuestions.length}`);
+            console.log(`  Prev disabled: ${prevBtn.disabled}, Next disabled: ${nextBtn.disabled}`);
+
+            // Apply Tailwind classes for disabled state
+            if (prevBtn.disabled) {
+                prevBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                prevBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            if (nextBtn.disabled) {
+                nextBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        /**
+         * Handles the click event for the Next button.
+         */
+        nextBtn.addEventListener('click', () => {
+            console.log("Next button clicked!");
+            if (currentQuestionIndex < currentQuestions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                console.log("Already on the last question. Next button is disabled.");
+            }
+        });
+
+        /**
+         * Handles the click event for the Previous button.
+         */
+        prevBtn.addEventListener('click', () => {
+            console.log("Previous button clicked!");
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion();
+            } else {
+                console.log("Already on the first question. Previous button is disabled.");
+            }
+        });
+
+        /**
+         * Calculates the score and displays results in a modal.
+         */
+        submitBtn.addEventListener('click', () => {
+            calculateScoreAndShowResults();
+        });
+
+        /**
+         * Calculates the final score and displays it.
+         */
+        function calculateScoreAndShowResults() {
+            clearInterval(timerInterval); // Stop the timer
+            testSubmitted = true; // Mark test as submitted
+
+            let score = 0;
+            currentQuestions.forEach((question, index) => {
+                if (userAnswers[index] === question.answer) {
+                    score++;
+                }
+            });
+            scoreDisplay.textContent = `Your score: ${score}/${currentQuestions.length}`;
+            resultsModal.classList.add('show');
+
+            // Disable all interactive elements after submission
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            // Re-load current question to apply feedback immediately
+            loadQuestion();
+        }
+
+        /**
+         * Closes the results modal.
+         */
+        closeModalBtn.addEventListener('click', () => {
+            resultsModal.classList.remove('show');
+            // User can still review answers after closing modal, no reset here
+        });
+
+        /**
+         * Resets the test state for a new subject test.
+         */
+        function resetTest() {
+            currentQuestionIndex = 0;
+            userAnswers = {};
+            timeLeft = 600; // Reset timer to 10 minutes
+            initialTime = 600; // Reset initial time for calculating time taken
+            testSubmitted = false; // Reset submission status
+            updateTimerDisplay();
+            clearInterval(timerInterval); // Clear any existing timer
+            startTimer();
+            loadQuestion(); // This will call updateNavigationButtons() and correctly set button states
+            submitBtn.disabled = false; // Ensure submit button is re-enabled for new test
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        /**
+         * Updates the timer display every second.
+         */
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `Time Left: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        /**
+         * Starts the countdown timer.
+         */
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    calculateScoreAndShowResults(); // Auto-submit on time end
+                }
+            }, 1000);
+        }
+
+        /**
+         * Validates the registration form inputs, including the passkey.
+         * @returns {boolean} True if all inputs are valid, false otherwise.
+         */
+        function validateRegistrationForm() {
+            let isValid = true;
+
+            // Name validation
+            if (studentNameInput.value.trim() === '') {
+                nameError.classList.remove('hidden');
+                isValid = false;
+            } else {
+                nameError.classList.add('hidden');
+            }
+
+            // Email validation (basic regex for Gmail)
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+            if (!emailRegex.test(studentEmailInput.value.trim())) {
+                emailError.classList.remove('hidden');
+                isValid = false;
+            } else {
+                emailError.classList.add('hidden');
+            }
+
+            // Place validation
+            if (studentPlaceInput.value.trim() === '') {
+                placeError.classList.remove('hidden');
+                isValid = false;
+            } else {
+                placeError.classList.add('hidden');
+            }
+
+            // Passkey validation
+            const enteredPasskey = examPasskeyInput.value.trim();
+            const requiredPasskey = quizData[currentExamKey].passkey;
+
+            if (enteredPasskey === '' || enteredPasskey !== requiredPasskey) {
+                passkeyError.classList.remove('hidden');
+                isValid = false;
+            } else {
+                passkeyError.classList.add('hidden');
+            }
+
+            return isValid;
+        }
+
+        /**
+         * Helper function to clean LaTeX from text for PDF output.
+         * Removes $ delimiters and common LaTeX commands.
+         * @param {string} text - The text possibly containing LaTeX.
+         * @returns {string} Cleaned text.
+         */
+        function cleanLaTeXForPdf(text) {
+            // Remove inline and display math delimiters
+            let cleanedText = text.replace(/\$(.*?)\$/g, (match, p1) => p1); // Removes $...$ and keeps content
+            cleanedText = cleanedText.replace(/\\\( (.*?)\\\)/g, (match, p1) => p1); // Removes \(...\)
+            cleanedText = cleanedText.replace(/\\\[ (.*?)\\]/g, (match, p1) => p1); // Removes \[...\]
+
+            // Remove common LaTeX commands (basic examples, can be expanded)
+            cleanedText = cleanedText.replace(/\\text\{(.*?)\}/g, (match, p1) => p1); // \text{}
+            cleanedText = cleanedText.replace(/\\frac\{(.*?)\}\{(.*?)\}/g, (match, num, den) => `${num}/${den}`); // \frac{}
+            cleanedText = cleanedText.replace(/\\sqrt\{(.*?)\}/g, (match, p1) => `sqrt(${p1})`); // \sqrt{}
+            cleanedText = cleanedText.replace(/\\cdot/g, " * "); // \cdot
+            cleanedText = cleanedText.replace(/\\lbrace/g, "{"); // \lbrace
+            cleanedText = cleanedText.replace(/\\rbrace/g, "}"); // \rbrace
+            cleanedText = cleanedText.replace(/\\mathbb\{Z\}/g, "Z"); // \mathbb{Z}
+            cleanedText = cleanedText.replace(/\\mathbb\{Q\}/g, "Q"); // \mathbb{Q}
+            cleanedText = cleanedText.replace(/\\mathbb\{R\}/g, "R"); // \mathbb{R}
+            cleanedText = cleanedText.replace(/\\hat\{i\}/g, "i"); // \hat{i}
+            cleanedText = cleanedText.replace(/\\hat\{j\}/g, "j"); // \hat{j}
+            cleanedText = cleanedText.replace(/\\vec\{(.*?)\}/g, (match, p1) => `vec(${p1})`); // \vec{}
+            cleanedText = cleanedText.replace(/\\begin\{pmatrix\}(.*?)\\end\{pmatrix\}/gs, (match, p1) => `[${p1.replace(/\\\\/g, '; ').replace(/&/g, ', ')}]`); // matrices
+            cleanedText = cleanedText.replace(/\\sum/g, "Sum");
+            cleanedText = cleanedText.replace(/\\infty/g, "infinity");
+            cleanedText = cleanedText.replace(/\\sin/g, "sin");
+            cleanedText = cleanedText.replace(/\\cos/g, "cos");
+            cleanedText = cleanedText.replace(/\\ln/g, "ln");
+            cleanedText = cleanedText.replace(/\\pm/g, "+-");
+            cleanedText = cleanedText.replace(/\\alpha/g, "alpha");
+            cleanedText = cleanedText.replace(/\\beta/g, "beta");
+            cleanedText = cleanedText.replace(/\\pi/g, "pi");
+            cleanedText = cleanedText.replace(/\\le/g, "<=");
+            cleanedText = cleanedText.replace(/\\ge/g, ">=");
+            cleanedText = cleanedText.replace(/\\text\{det\}/g, "det");
+            cleanedText = cleanedText.replace(/\\text\{Ker\}/g, "Ker");
+            cleanedText = cleanedText.replace(/\\text\{Im\}/g, "Im");
+            cleanedText = cleanedText.replace(/\\partial/g, "partial");
+            cleanedText = cleanedText.replace(/\\circ/g, "deg"); // For degrees symbol
+            cleanedText = cleanedText.replace(/\\frac/g, "/"); // Simple fraction representation
+
+            return cleanedText.trim();
+        }
+
+
+        /**
+         * Downloads the report card as a PDF file.
+         */
+        async function downloadReportCard() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const timeTakenSeconds = initialTime - timeLeft;
+            const timeTakenMinutes = Math.floor(timeTakenSeconds / 60);
+            const timeTakenRemainingSeconds = timeTakenSeconds % 60;
+            const formattedTimeTaken = `${timeTakenMinutes.toString().padStart(2, '0')}m ${timeTakenRemainingSeconds.toString().padStart(2, '0')}s`;
+
+            let score = 0;
+            currentQuestions.forEach((question, index) => {
+                if (userAnswers[index] === question.answer) {
+                    score++;
+                }
+            });
+
+            let yPos = 20; // Initial Y position for text
+            const lineHeight = 7;
+            const margin = 15;
+            const pageWidth = doc.internal.pageSize.getWidth();
+
+            // Header
+            doc.setFontSize(22);
+            doc.text("Math Mock Test Report Card", pageWidth / 2, yPos, { align: 'center' });
+            yPos += 15;
+
+            // Summary Section
+            doc.setFontSize(14);
+            doc.text("Student Information:", margin, yPos);
+            yPos += lineHeight;
+            doc.setFontSize(12);
+            doc.text(`Name: ${userProfile.name}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Email: ${userProfile.email}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Place: ${userProfile.place}`, margin, yPos);
+            yPos += lineHeight * 2;
+
+            doc.setFontSize(14);
+            doc.text("Test Details:", margin, yPos);
+            yPos += lineHeight;
+            doc.setFontSize(12);
+            doc.text(`Exam: ${formatKeyToTitle(currentExamKey)}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Subject: ${formatKeyToTitle(currentSubjectKey)}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Total Questions: ${currentQuestions.length}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Correct Answers: ${score}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Incorrect Answers: ${currentQuestions.length - score}`, margin, yPos);
+            yPos += lineHeight;
+            doc.text(`Time Taken: ${formattedTimeTaken}`, margin, yPos);
+            yPos += lineHeight * 2;
+
+            // Question Breakdown Section
+            doc.setFontSize(16);
+            doc.text("Question Breakdown:", margin, yPos);
+            yPos += lineHeight * 2;
+
+            doc.setFontSize(10); // Smaller font for question details
+
+            currentQuestions.forEach((question, index) => {
+                const qNum = index + 1;
+                const cleanedQuestionText = cleanLaTeXForPdf(question.question);
+                const cleanedUserAnswer = cleanLaTeXForPdf(userAnswers[index] || "Not Attempted");
+                const cleanedCorrectAnswer = cleanLaTeXForPdf(question.answer);
+                const result = (userAnswers[index] === question.answer) ? "Correct" : "Incorrect";
+
+                // Check if new page is needed
+                if (yPos + (lineHeight * 5) > doc.internal.pageSize.getHeight() - margin) {
+                    doc.addPage();
+                    yPos = margin; // Reset y position for new page
+                    doc.setFontSize(16);
+                    doc.text("Question Breakdown (continued):", margin, yPos);
+                    yPos += lineHeight * 2;
+                    doc.setFontSize(10);
+                }
+
+                doc.text(`Question ${qNum}:`, margin, yPos);
+                yPos += lineHeight;
+                doc.text(doc.splitTextToSize(`  ${cleanedQuestionText}`, pageWidth - (margin * 2)), margin + 5, yPos);
+                yPos += (doc.splitTextToSize(`  ${cleanedQuestionText}`, pageWidth - (margin * 2))).length * lineHeight; // Adjust Y based on wrapped text height
+
+                doc.text(`  Your Answer: ${cleanedUserAnswer}`, margin + 5, yPos);
+                yPos += lineHeight;
+                doc.text(`  Correct Answer: ${cleanedCorrectAnswer}`, margin + 5, yPos);
+                yPos += lineHeight;
+                doc.text(`  Result: ${result}`, margin + 5, yPos);
+                yPos += lineHeight * 2; // Space after each question
+            });
+
+            // Save the PDF
+            doc.save(`Report_Card_${userProfile.name.replace(/\s/g, '_')}_${formatKeyToTitle(currentSubjectKey)}.pdf`);
+        }
+
+
+        // --- Event Listeners for Navigation ---
+
+        // Exam card click -> go to Registration Section
+        document.querySelectorAll('.exam-card').forEach(card => {
+            card.addEventListener('click', (event) => {
+                currentExamKey = event.currentTarget.dataset.exam;
+                showView('registration-section');
+            });
+        });
+
+        // Proceed to Subjects button click (from Registration)
+        proceedToSubjectsBtn.addEventListener('click', () => {
+            if (validateRegistrationForm()) {
+                userProfile.name = studentNameInput.value.trim();
+                userProfile.email = studentEmailInput.value.trim();
+                userProfile.place = studentPlaceInput.value.trim();
+                console.log("User Profile:", userProfile); // For debugging: log collected data
+                showView('subject-selection-section');
+            }
+        });
+
+        // Download Report Card button click (from Results Modal)
+        downloadReportCardBtn.addEventListener('click', downloadReportCard);
+
+        // Back to Exams button click (from Registration)
+        backToExamsFromRegistrationBtn.addEventListener('click', () => {
+            showView('home-section');
+        });
+
+        // Back to Subjects button click (from Quiz)
+        backToSubjectsBtn.addEventListener('click', () => {
+            showView('subject-selection-section');
+        });
+
+        // Back to Exams button click (from Subject Selection)
+        backToExamsFromSubjectsBtn.addEventListener('click', () => {
+            showView('home-section');
+        });
+
+        // Back to Exams Home button click (from Quiz)
+        backToExamsFromQuizBtn.addEventListener('click', () => {
+            showView('home-section');
+        });
+
+        // Initialize the website to show the home section
+        window.onload = function() {
+            showView('home-section');
+        };
+    </script>
+</body>
 </html>
